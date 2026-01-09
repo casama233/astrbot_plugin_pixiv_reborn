@@ -14,7 +14,10 @@ from ..utils.tag import (
 
 
 class UserHandler:
-
+    """
+    Pixiv 用户功能处理器
+    负责处理用户搜索、用户详情和用户作品获取功能
+    """
     def __init__(self, client_wrapper, pixiv_config):
 
         self.client_wrapper = client_wrapper

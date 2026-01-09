@@ -2,12 +2,13 @@ import asyncio
 from astrbot.api import logger
 from pixivpy3 import AppPixivAPI, PixivError
 
+
 class PixivClientWrapper:
     """Pixiv API 客户端包装器，处理认证和定期刷新 Token"""
+
     def __init__(self, pixiv_config):
         self.pixiv_config = pixiv_config
         self.client_api = AppPixivAPI(**pixiv_config.get_requests_kwargs())
-
 
     async def authenticate(self) -> bool:
         """尝试使用配置的凭据进行 Pixiv API 认证"""
@@ -15,7 +16,9 @@ class PixivClientWrapper:
         try:
             if self.pixiv_config.refresh_token:
                 # 调用 auth()，pixivpy3 会在需要时刷新 token
-                await asyncio.to_thread(self.client_api.auth, refresh_token=self.pixiv_config.refresh_token)
+                await asyncio.to_thread(
+                    self.client_api.auth, refresh_token=self.pixiv_config.refresh_token
+                )
                 return True
             else:
                 logger.error("Pixiv 插件：未提供有效的 Refresh Token，无法进行认证。")
@@ -26,7 +29,6 @@ class PixivClientWrapper:
                 f"Pixiv 插件：认证/刷新时发生错误 - 异常类型: {type(e)}, 错误信息: {e}"
             )
             return False
-
 
     async def periodic_token_refresh(self):
         """定期尝试使用 refresh_token 进行认证以保持其活性"""
@@ -76,20 +78,16 @@ class PixivClientWrapper:
                 logger.error(traceback.format_exc())
 
     async def start_refresh_task(self):
-    
-      # 启动后台刷新任务
+
+        # 启动后台刷新任务
         if self.pixiv_config.refresh_interval > 0:
             self._refresh_task = asyncio.create_task(self.periodic_token_refresh())
             logger.info(
                 f"Pixiv 插件：已启动 Refresh Token 自动刷新任务，间隔 {self.pixiv_config.refresh_interval} 分钟。"
             )
         else:
-            logger.info("Pixiv 插件：Refresh Token 自动刷新已禁用。")    
-    
-
+            logger.info("Pixiv 插件：Refresh Token 自动刷新已禁用。")
 
     async def call_pixiv_api(self, func, *args, **kwargs):
         """异步调用 Pixiv API 的辅助方法"""
         return await asyncio.to_thread(func, *args, **kwargs)
-
-

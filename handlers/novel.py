@@ -18,6 +18,10 @@ from fpdf import FPDF
 
 
 class NovelHandler:
+    """
+    Pixiv 小说功能处理器
+    负责处理 Pixiv 小说搜索、推荐、新小说、系列详情、评论获取和下载为 PDF 等功能
+    """
 
     def __init__(self, client_wrapper, pixiv_config):
 

@@ -8,7 +8,10 @@ from ..utils.database import (
 
 
 class SubscribeHandler:
-
+    """
+    Pixiv 订阅功能处理器
+    负责处理画师订阅的添加、删除和查看功能
+    """
     def __init__(self, client_wrapper, pixiv_config):
 
         self.client_wrapper = client_wrapper
