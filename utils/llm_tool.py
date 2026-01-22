@@ -22,7 +22,6 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
     """
     pixiv_client: Any = None
     pixiv_config: Any = None
-
     name: str = "pixiv_search_illust"
     description: str = (
         "【图片/插画搜索专用工具】用于在Pixiv上搜索二次元插画、动漫图片、壁纸等。"
@@ -38,6 +37,13 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
                     "type": "string",
                     "description": "搜索关键词或标签，直接使用用户输入的原文。例如：初音ミク、原神、可爱女孩等",
                 },
+                "count": {
+                    "type": "integer",
+                    "description": "返回图片数量，默认1张，最多10张。根据用户请求设置，如'来两张'则设为2",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "default": 1,
+                },
                 "filters": {
                     "type": "string",
                     "description": "过滤条件：'safe'(全年龄)、'r18'(限制级)。默认为safe",
@@ -52,19 +58,20 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
     ) -> ToolExecResult:
         try:
             query = kwargs.get("query", "")
-            logger.info(f"Pixiv插画搜索工具：搜索 '{query}'")
+            count = min(max(int(kwargs.get("count", 1)), 1), 10)
+            logger.info(f"Pixiv插画搜索工具：搜索 '{query}'，数量: {count}")
             
             if not self.pixiv_client:
                 return "错误: Pixiv客户端未初始化"
             
             tags = query.strip()
-            return await self._search_illust(tags, query, context)
+            return await self._search_illust(tags, query, context, count)
             
         except Exception as e:
             logger.error(f"Pixiv插画搜索失败: {e}")
             return f"搜索失败: {str(e)}"
 
-    async def _search_illust(self, tags, query, context):
+    async def _search_illust(self, tags, query, context, count=1):
         """按热度（收藏数）搜索插画 - 一周内"""
         import asyncio
 
@@ -122,18 +129,18 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
 
         event = self._get_event(context)
         if event:
-            return await self._send_pixiv_result(event, sorted_illusts, query, tags)
+            return await self._send_pixiv_result(event, sorted_illusts, query, tags, count)
         else:
             return self._format_text_results(sorted_illusts, query, tags)
 
-    async def _send_pixiv_result(self, event, items, query, tags):
+    async def _send_pixiv_result(self, event, items, query, tags, count=1):
         """发送按热度排序的结果"""
-        logger.info("PixivIllustSearchTool: 准备发送图片")
+        logger.info(f"PixivIllustSearchTool: 准备发送 {count} 张图片")
         config = FilterConfig(
             r18_mode=self.pixiv_config.r18_mode if self.pixiv_config else "过滤 R18",
             ai_filter_mode=self.pixiv_config.ai_filter_mode if self.pixiv_config else "过滤 AI 作品",
             display_tag_str=f"搜索:{query}",
-            return_count=self.pixiv_config.return_count if self.pixiv_config else 1,
+            return_count=count,
             logger=logger,
             show_filter_result=False,
             excluded_tags=[]
