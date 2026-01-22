@@ -39,7 +39,12 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
                 },
                 "count": {
                     "type": "integer",
-                    "description": "返回图片数量，默认1张，最多10张。根据用户请求设置，如'来两张'则设为2",
+                    "description": (
+                        "【必填】返回图片数量。"
+                        "必须根据用户请求的数量填写！"
+                        "例如：'来两张图'→count=2，'给我三张'→count=3，'来点图'→count=3。"
+                        "如果用户没有明确说数量，默认设为1。最小1，最大10。"
+                    ),
                     "minimum": 1,
                     "maximum": 10,
                     "default": 1,
