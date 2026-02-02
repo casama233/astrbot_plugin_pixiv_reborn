@@ -312,25 +312,40 @@ async def process_and_send_illusts(
         is_novel: 是否为小说（默认为False）
 
     Returns:
-        AsyncGenerator: 生成发送结果
+        AsyncGenerator: 生成发送结果 (message_content, related_illust_ids)
     """
+
+    def _get_illust_id(item):
+        try:
+            item_id = getattr(item, "id", None)
+            if item_id is not None:
+                return int(item_id)
+        except Exception:
+            pass
+        try:
+            if isinstance(item, dict) and "id" in item:
+                return int(item["id"])
+        except Exception:
+            pass
+        return None
+
     # 应用过滤
     filtered_illusts, filter_msgs = filter_illusts_with_reason(initial_illusts, config)
 
     # 发送过滤消息
     if config.show_filter_result:
         for msg in filter_msgs:
-            yield event.plain_result(msg)
+            yield event.plain_result(msg), []
 
     if not filtered_illusts:
         # 如果没有符合条件的作品，发送一个提示消息
         if config.show_filter_result:
             # 如果显示过滤结果，但过滤消息为空，发送一个默认消息
             if not filter_msgs:
-                yield event.plain_result("筛选后没有符合条件的作品可发送。")
+                yield event.plain_result("筛选后没有符合条件的作品可发送。"), []
         else:
             # 如果不显示过滤结果，直接发送一个简单的提示消息
-            yield event.plain_result("没有找到符合条件的作品。")
+            yield event.plain_result("没有找到符合条件的作品。"), []
         return
 
     # 随机选择作品
@@ -344,21 +359,28 @@ async def process_and_send_illusts(
     # 根据配置决定发送方式
     if config.forward_threshold:
         # 启用转发时使用转发消息（无论图片数量多少）
+        related_ids = []
+        for illust in illusts_to_send:
+            illust_id = _get_illust_id(illust)
+            if illust_id is not None:
+                related_ids.append(illust_id)
+
         async for result in send_forward_message_func(
             client,
             event,
             illusts_to_send,
             lambda illust: build_detail_message_func(illust, is_novel=is_novel),
         ):
-            yield result
+            yield result, related_ids
     else:
         # 未启用转发时逐张发送
         for illust in illusts_to_send:
+            illust_id = _get_illust_id(illust)
             detail_message = build_detail_message_func(illust, is_novel=is_novel)
             async for result in send_pixiv_image_func(
                 client, event, illust, detail_message, show_details=config.show_details
             ):
-                yield result
+                yield result, ([illust_id] if illust_id is not None else [])
 
 
 def parse_tags_with_exclusion(tags_str):
