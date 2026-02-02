@@ -1,5 +1,4 @@
 from astrbot.api.event import AstrMessageEvent
-from astrbot.api import logger
 
 from ..utils.tag import validate_and_process_tags
 
@@ -19,9 +18,7 @@ from ..utils.database import (
 
 
 class RandomIllustHandler:
-
     def __init__(self, client_wrapper, pixiv_config, context):
-
         self.client_wrapper = client_wrapper
         self.client = client_wrapper.client_api
         self.pixiv_config = pixiv_config
@@ -75,7 +72,7 @@ class RandomIllustHandler:
 
         msg = "当前随机搜索标签列表：\n"
         for i, tag_entry in enumerate(tags):
-            msg += f"{i+1}. {tag_entry.tag}\n"
+            msg += f"{i + 1}. {tag_entry.tag}\n"
 
         yield event.plain_result(msg)
 
@@ -232,6 +229,6 @@ class RandomIllustHandler:
         for i, config in enumerate(configs):
             status = "（暂停）" if config.is_suspended else ""
             date_info = f" ({config.date})" if config.date else ""
-            msg += f"{i+1}. {config.mode}{date_info}{status}\n"
+            msg += f"{i + 1}. {config.mode}{date_info}{status}\n"
 
         yield event.plain_result(msg)
