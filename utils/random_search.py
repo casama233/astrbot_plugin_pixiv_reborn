@@ -374,7 +374,7 @@ class RandomSearchService:
             # 复用 process_and_send_illusts
             sent_illust_ids = set()  # 记录已发送的作品ID
 
-            async for message_content in process_and_send_illusts(
+            async for message_content, related_illust_ids in process_and_send_illusts(
                 initial_illusts,
                 config,
                 self.client,
@@ -391,31 +391,8 @@ class RandomSearchService:
 
                     try:
                         if hasattr(message_content, "chain"):
-                            # 检查是否为转发消息
-                            chain = message_content.chain
-                            if chain and len(chain) > 0 and hasattr(chain[0], "nodes"):
-                                logger.info(
-                                    f"检测到转发消息，节点数量: {len(chain[0].nodes)}"
-                                )
-                                # 转发消息中包含多个作品，需要提取作品ID
-                                for node in chain[0].nodes:
-                                    if hasattr(node, "content") and node.content:
-                                        for content_item in node.content:
-                                            if (
-                                                hasattr(content_item, "plain")
-                                                and "作品ID:" in content_item.plain
-                                            ):
-                                                # 从详情消息中提取作品ID
-                                                lines = content_item.plain.split("\n")
-                                                for line in lines:
-                                                    if line.startswith(
-                                                        "链接: https://www.pixiv.net/artworks/"
-                                                    ):
-                                                        illust_id = int(
-                                                            line.split("/")[-1]
-                                                        )
-                                                        sent_illust_ids.add(illust_id)
                             await self.context.send_message(session_id, message_content)
+                            sent_illust_ids.update(related_illust_ids or [])
                         else:
                             # 纯文本或列表的回退
                             if isinstance(message_content, list):
@@ -427,10 +404,12 @@ class RandomSearchService:
                                 await self.context.send_message(
                                     session_id, message_content
                                 )
+                                sent_illust_ids.update(related_illust_ids or [])
                             else:
                                 # 尝试字符串转换
                                 chain = MessageChain().message(str(message_content))
                                 await self.context.send_message(session_id, chain)
+                                sent_illust_ids.update(related_illust_ids or [])
                         logger.info(f"消息已发送至 {session_id}")
                     except Exception as e:
                         logger.error(f"向 {session_id} 发送消息失败: {e}")
@@ -524,7 +503,7 @@ class RandomSearchService:
             mock_event = MockEvent()
             sent_illust_ids = set()
 
-            async for message_content in process_and_send_illusts(
+            async for message_content, related_illust_ids in process_and_send_illusts(
                 initial_illusts,
                 config,
                 self.client,
@@ -537,30 +516,15 @@ class RandomSearchService:
                 if message_content:
                     try:
                         if hasattr(message_content, "chain"):
-                            chain = message_content.chain
-                            if chain and len(chain) > 0 and hasattr(chain[0], "nodes"):
-                                for node in chain[0].nodes:
-                                    if hasattr(node, "content") and node.content:
-                                        for content_item in node.content:
-                                            if (
-                                                hasattr(content_item, "plain")
-                                                and "作品ID:" in content_item.plain
-                                            ):
-                                                lines = content_item.plain.split("\n")
-                                                for line in lines:
-                                                    if line.startswith(
-                                                        "链接: https://www.pixiv.net/artworks/"
-                                                    ):
-                                                        illust_id = int(
-                                                            line.split("/")[-1]
-                                                        )
-                                                        sent_illust_ids.add(illust_id)
                             await self.context.send_message(session_id, message_content)
+                            sent_illust_ids.update(related_illust_ids or [])
                         elif isinstance(message_content, MessageChain):
                             await self.context.send_message(session_id, message_content)
+                            sent_illust_ids.update(related_illust_ids or [])
                         else:
                             chain = MessageChain().message(str(message_content))
                             await self.context.send_message(session_id, chain)
+                            sent_illust_ids.update(related_illust_ids or [])
                         logger.info(f"排行榜消息已发送至 {session_id}")
                     except Exception as e:
                         logger.error(f"向 {session_id} 发送排行榜消息失败: {e}")
