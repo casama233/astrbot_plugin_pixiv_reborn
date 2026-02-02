@@ -49,10 +49,10 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
                         "【必填】返回图片数量。"
                         "必须根据用户请求的数量填写！"
                         "例如：'来两张图'→count=2，'给我三张'→count=3，'来点图'→count=3。"
-                        "如果用户没有明确说数量，默认设为1。最小1，最大10。"
+                        "如果用户没有明确说数量，默认设为1。最小1，最大5。"
                     ),
                     "minimum": 1,
-                    "maximum": 10,
+                    "maximum": 5,
                     "default": 1,
                 },
                 "filters": {
@@ -69,7 +69,7 @@ class PixivIllustSearchTool(FunctionTool[AstrAgentContext]):
     ) -> ToolExecResult:
         try:
             query = kwargs.get("query", "")
-            count = min(max(int(kwargs.get("count", 1)), 1), 10)
+            count = min(max(int(kwargs.get("count", 1)), 1), 5)
             logger.info(f"Pixiv插画搜索工具：搜索 '{query}'，数量: {count}")
 
             if not self.pixiv_client:
