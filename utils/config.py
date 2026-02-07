@@ -92,6 +92,9 @@ class PixivConfig:
         self.forward_threshold = self.config.get("forward_threshold", False)
         self.image_send_method = self.config.get("image_send_method", "url")
         self.image_quality = self.config.get("image_quality", "original")
+        # 本地 PIL 压缩：仅在 image_send_method 为 file/byte 时生效
+        self.pil_compress_quality = self.config.get("pil_compress_quality", 100)
+        self.pil_compress_target_kb = self.config.get("pil_compress_target_kb", 0)
         self.refresh_interval = self.config.get("refresh_token_interval_minutes", 180)
         self.subscription_enabled = self.config.get("subscription_enabled", True)
         self.subscription_check_interval_minutes = self.config.get(
@@ -163,6 +166,8 @@ class PixivConfigManager:
                 "type": "enum",
                 "choices": ["original", "large", "medium"],
             },
+            "pil_compress_quality": {"type": "int", "min": 1, "max": 100},
+            "pil_compress_target_kb": {"type": "int", "min": 0, "max": 20480},
             "subscription_enabled": {"type": "bool"},
             # 隐藏的配置项，不显示给用户但仍然可以设置
             "image_send_method": {
@@ -209,6 +214,8 @@ class PixivConfigManager:
             "forward_threshold",
             "image_quality",
             "image_send_method",
+            "pil_compress_quality",
+            "pil_compress_target_kb",
             "subscription_enabled",
             "random_search_min_interval",
             "random_search_max_interval",
