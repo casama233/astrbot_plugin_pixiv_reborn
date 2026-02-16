@@ -118,6 +118,25 @@
 - [pixivpy3 官方文档](https://pypi.org/project/pixivpy3/)
 - [Pixiv OAuth 教程](https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362)
 
+### 部署反代服务（中国大陆用户）
+
+若无法使用代理且直连 Pixiv API 失败，可自建 Cloudflare Workers 反向代理：
+
+**仓库地址**: [vmoranv/pixiv-proxy](https://github.com/vmoranv/pixiv-proxy)
+
+**部署步骤**：
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 进入 **Workers & Pages** → **Create Application** → **Create Worker**
+3. 将 [pixiv-proxy.js](https://raw.githubusercontent.com/vmoranv/pixiv-proxy/main/pixiv-proxy.js) 的代码粘贴到编辑器中
+4. 点击 **Deploy** 部署
+5. 部署完成后复制 Worker 域名（如 `xxx.workers.dev`）
+6. 在插件配置中设置：
+   - `api_proxy_host` = `xxx.workers.dev`（用于 API 访问）
+   - 或 `image_proxy_host` = `xxx.workers.dev`（用于图片下载）
+
+> **提示**: 建议绑定自定义域名以避免 `workers.dev` 域名被墙
+
 ## 📝 使用示例
 
 ```bash
@@ -233,6 +252,8 @@
 **模块未找到**: 重启 AstrBot 以确保依赖正确安装
 
 **API 认证失败**: 检查 `refresh_token` 是否有效和正确配置
+
+**无代理直连失败**: 若在中国大陆无法使用代理且 ByPassSniApi 模式失效，可自建 Cloudflare Workers 反向代理。详见 [vmoranv/pixiv-proxy](https://github.com/vmoranv/pixiv-proxy) 仓库，部署后在插件配置中设置 `api_proxy_host` 为你的 Worker 域名。
 
 **Fanbox 帖子获取失败**: 可能触发 Cloudflare 或帖子受限。可先用 `/pixiv_fanbox_creator` 查看公开帖子，必要时配置 `fanbox_sessid`；若官方仍 403，建议同时配置 `fanbox_cookie`（完整 Cookie，含 `cf_clearance`）和 `fanbox_user_agent`（与浏览器一致）；也可切换 `fanbox_data_source=nekohouse` 仅走归档数据。
 

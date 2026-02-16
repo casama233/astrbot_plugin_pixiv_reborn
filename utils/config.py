@@ -123,6 +123,8 @@ class PixivConfig:
         # 新增：图片反代配置
         self.image_proxy_host = self.config.get("image_proxy_host", "i.pixiv.re")
         self.use_image_proxy = self.config.get("use_image_proxy", True)
+        # 新增：API 反代服务器配置（用于大陆直连替代 ByPassSniApi）
+        self.api_proxy_host = self.config.get("api_proxy_host", "").strip()
 
     def get_auth_error_message(self) -> str:
         """获取认证错误消息"""
