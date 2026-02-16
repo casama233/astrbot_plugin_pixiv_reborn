@@ -1,6 +1,7 @@
 import asyncio
+import socket
 from astrbot.api import logger
-from pixivpy3 import ByPassSniApi, PixivError
+from pixivpy3 import ByPassSniApi, PixivError, AppPixivAPI
 
 
 class PixivClientWrapper:
@@ -13,15 +14,85 @@ class PixivClientWrapper:
         # 根据是否配置代理选择不同的 API 客户端
         if pixiv_config.proxy:
             # 有代理时使用标准 AppPixivAPI
-            from pixivpy3 import AppPixivAPI
-
             self.client_api = AppPixivAPI(**pixiv_config.get_requests_kwargs())
             logger.info("Pixiv 插件：使用代理模式 (AppPixivAPI)")
+        elif pixiv_config.api_proxy_host:
+            # 使用 API 反代服务器
+            self.client_api = AppPixivAPI()
+            self.client_api.hosts = f"https://{pixiv_config.api_proxy_host}"
+            logger.info(f"Pixiv 插件：使用 API 反代模式 ({pixiv_config.api_proxy_host})")
         else:
-            # 无代理时使用 ByPassSniApi (大陆直连)
-            self.client_api = ByPassSniApi()
-            self.client_api.require_appapi_hosts()
-            logger.info("Pixiv 插件：使用大陆直连模式 (ByPassSniApi)")
+            # 尝试多种直连方案
+            self.client_api = self._create_direct_client()
+
+    def _create_direct_client(self):
+        """创建直连客户端，尝试多种方案"""
+        # 方案1: 尝试标准 API 直连（部分网络环境可用）
+        try:
+            # 快速测试 DNS 解析
+            socket.gethostbyname("oauth.secure.pixiv.net")
+            logger.info("Pixiv 插件：DNS 解析成功，尝试直连模式")
+            # 先测试连接
+            import requests
+            try:
+                test_resp = requests.head(
+                    "https://oauth.secure.pixiv.net/",
+                    timeout=5,
+                    allow_redirects=False
+                )
+                logger.info("Pixiv 插件：直连测试成功，使用标准 AppPixivAPI")
+                return AppPixivAPI()
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                logger.info("Pixiv 插件：直连测试超时，尝试 ByPassSniApi 模式")
+        except socket.gaierror:
+            logger.info("Pixiv 插件：DNS 解析失败，尝试 ByPassSniApi 模式")
+
+        # 方案2: ByPassSniApi（使用国内可用 DoH）
+        client_api = ByPassSniApi()
+        hosts_result = self._require_appapi_hosts_with_cn_doh(client_api)
+
+        if hosts_result:
+            logger.info(f"Pixiv 插件：使用 ByPassSniApi 模式, hosts={hosts_result}")
+            return client_api
+
+        # 方案3: 最后回退到标准直连
+        logger.warning("Pixiv 插件：所有直连方案失败，回退到标准模式（可能无法连接）")
+        return AppPixivAPI()
+
+    def _require_appapi_hosts_with_cn_doh(self, api, hostname: str = "app-api.secure.pixiv.net", timeout: int = 10) -> str | bool:
+        """使用国内可用的 DoH 服务器解析 Pixiv hosts"""
+        import requests
+
+        # 优先使用国内 DoH 服务器
+        doh_urls = [
+            "https://doh.pub/dns-query",      # 腾讯 DoH（国内可用）
+            "https://dns.alidns.com/dns-query", # 阿里 DoH（可能可用）
+            "https://1.0.0.1/dns-query",      # Cloudflare 备选
+            "https://1.1.1.1/dns-query",      # Cloudflare 主
+            "https://doh.dns.sb/dns-query",   # DNS.sb
+        ]
+
+        headers = {"Accept": "application/dns-json"}
+        params = {
+            "name": hostname,
+            "type": "A",
+            "do": "false",
+            "cd": "false",
+        }
+
+        for url in doh_urls:
+            try:
+                response = requests.get(url, headers=headers, params=params, timeout=timeout)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "Answer" in data and data["Answer"]:
+                        ip = data["Answer"][0]["data"]
+                        api.hosts = f"https://{ip}"
+                        return api.hosts
+            except Exception:
+                continue
+
+        return False
 
     async def authenticate(self) -> bool:
         """尝试使用配置的凭据进行 Pixiv API 认证"""
