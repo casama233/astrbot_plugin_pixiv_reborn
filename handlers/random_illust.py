@@ -31,7 +31,11 @@ class RandomIllustHandler:
         """添加随机搜索标签"""
         cleaned_tags = tags.strip()
         if not cleaned_tags:
-            yield event.plain_result("请输入要添加的随机搜索标签。")
+            yield event.plain_result(
+                "请输入要添加的随机搜索标签。\n"
+                "支持多标签和多个负面标签，例如：\n"
+                "/pixiv_random_add 露露卡,光之美少女,-ntr,-futa"
+            )
             return
 
         # 验证标签格式 (借用 validate_and_process_tags 进行基本检查)
