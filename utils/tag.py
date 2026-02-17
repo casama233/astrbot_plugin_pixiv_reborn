@@ -408,17 +408,27 @@ def parse_tags_with_exclusion(tags_str):
     if not tags_str:
         return [], [], []
 
-    all_tags = [
-        tag.strip() for tag in tags_str.replace("，", ",").split(",") if tag.strip()
-    ]
+    normalized_tags = (
+        tags_str.replace("，", ",")
+        .replace("、", ",")
+        .replace("；", ",")
+        .replace(";", ",")
+    )
+    all_tags = [tag.strip() for tag in normalized_tags.split(",") if tag.strip()]
     include_tags = []
     exclude_tags = []
 
+    negative_prefixes = ("-", "－", "—", "–")
     for tag in all_tags:
-        if tag.startswith("-"):
-            exclude_tags.append(tag[1:].lower())
+        if tag.startswith(negative_prefixes):
+            excluded_tag = tag[1:].strip().lower()
+            if excluded_tag:
+                exclude_tags.append(excluded_tag)
         else:
             include_tags.append(tag)
+
+    # 去重，保持用户输入顺序
+    exclude_tags = list(dict.fromkeys(exclude_tags))
 
     # 检查冲突标签
     include_tags_lower = [tag.lower() for tag in include_tags]

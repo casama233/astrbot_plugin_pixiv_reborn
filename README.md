@@ -59,7 +59,9 @@
 - `/pixiv_config help` - 显示配置帮助
 
 ### 排除 tag
-- `-<tag>` - 排除包含 `<tag>` 的插画(仅在 /pixiv, /pixiv_novel, /pixiv_deepsearch, /pixiv_and 中有效)
+- `-<tag>` - 排除包含 `<tag>` 的插画（支持多个负面标签）
+- 示例：`/pixiv 露露卡,光之美少女,-ntr,-futa`
+- 同样支持随机搜索标签配置：`/pixiv_random_add 露露卡,光之美少女,-ntr,-futa`
 
 ### 内容获取
 - `/pixiv_recommended` - 获取推荐作品
