@@ -496,6 +496,7 @@ class IllustHandler:
                     event,
                     filtered_illusts,
                     lambda illust: build_detail_message(illust, is_novel=False),
+                    send_all_pages=True,
                 ):
                     yield result
             else:
