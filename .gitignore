@@ -3,3 +3,4 @@ __pycache__/
 .tmp/
 data/t2i_templates/
 data/cmd_config.json
+.ace-tool/

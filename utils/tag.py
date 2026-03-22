@@ -29,41 +29,103 @@ class FilterConfig:
     show_details: bool = True
 
 
+def _get_value(source, *keys):
+    """Read a field from dict-like or object-like Pixiv data."""
+    if isinstance(source, dict):
+        for key in keys:
+            if key in source:
+                return source.get(key)
+        return None
+
+    for key in keys:
+        if hasattr(source, key):
+            return getattr(source, key)
+    return None
+
+
+def _to_int(value):
+    """Best-effort int conversion for Pixiv flags."""
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped.lstrip("-").isdigit():
+            return int(stripped)
+    return None
+
+
+def _extract_tag_name(tag) -> str:
+    """Extract a tag name from str/dict/object payloads."""
+    if isinstance(tag, str):
+        return tag.strip()
+
+    name = _get_value(tag, "name")
+    if isinstance(name, str):
+        return name.strip()
+    return ""
+
+
+def _extract_tag_translated_name(tag) -> str:
+    """Extract translated tag name from str/dict/object payloads."""
+    translated_name = _get_value(tag, "translated_name", "translatedName")
+    if isinstance(translated_name, str):
+        return translated_name.strip()
+    return ""
+
+
+def _extract_tag_names(tags) -> List[str]:
+    """Normalize Pixiv tags into a plain name list."""
+    if not tags:
+        return []
+
+    if isinstance(tags, (list, tuple, set)):
+        return [name for name in (_extract_tag_name(tag) for tag in tags) if name]
+
+    name = _extract_tag_name(tags)
+    return [name] if name else []
+
+
 def is_r18(item):
     """检查作品是否为R18内容"""
-    tags = getattr(item, "tags", [])
-    for tag in tags:
-        name = tag.get("name") if isinstance(tag, dict) else tag
-        if isinstance(name, str):
-            lname = name.lower().strip()
-            # 精确匹配或作为独立词匹配
-            if lname in R18_BADWORDS or any(
-                bad
-                for bad in R18_BADWORDS
-                if f" {bad} " in f" {lname} "
-                or lname.startswith(f"{bad} ")
-                or lname.endswith(f" {bad}")
-            ):
-                return True
+    x_restrict = _to_int(_get_value(item, "x_restrict", "xRestrict"))
+    if x_restrict is not None and x_restrict > 0:
+        return True
+
+    for name in _extract_tag_names(_get_value(item, "tags") or []):
+        lname = name.lower()
+        # 精确匹配或作为独立词匹配
+        if lname in R18_BADWORDS or any(
+            bad
+            for bad in R18_BADWORDS
+            if f" {bad} " in f" {lname} "
+            or lname.startswith(f"{bad} ")
+            or lname.endswith(f" {bad}")
+        ):
+            return True
     return False
 
 
 def is_ai(item):
     """检查作品是否为AI生成内容"""
-    tags = getattr(item, "tags", [])
-    for tag in tags:
-        name = tag.get("name") if isinstance(tag, dict) else tag
-        if isinstance(name, str):
-            lname = name.lower().strip()
-            # 精确匹配或作为独立词匹配
-            if lname in AI_BADWORDS or any(
-                bad
-                for bad in AI_BADWORDS
-                if f" {bad} " in f" {lname} "
-                or lname.startswith(f"{bad} ")
-                or lname.endswith(f" {bad}")
-            ):
-                return True
+    ai_type = _to_int(
+        _get_value(item, "illust_ai_type", "illustAiType", "ai_type", "aiType")
+    )
+    if ai_type is not None and ai_type > 0:
+        return True
+
+    for name in _extract_tag_names(_get_value(item, "tags") or []):
+        lname = name.lower()
+        # 精确匹配或作为独立词匹配
+        if lname in AI_BADWORDS or any(
+            bad
+            for bad in AI_BADWORDS
+            if f" {bad} " in f" {lname} "
+            or lname.startswith(f"{bad} ")
+            or lname.endswith(f" {bad}")
+        ):
+            return True
     return False
 
 
@@ -191,26 +253,17 @@ def format_tags(tags) -> str:
     R-18, 尘白禁区(Snowbreak), snowbreak, スノウブレイク(Snowbreak), ...
     """
     result = []
-    if isinstance(tags, list):
+    if isinstance(tags, (list, tuple, set)):
         for tag in tags:
-            if isinstance(tag, dict):
-                name = tag.get("name", "")
-                trans = tag.get("translated_name", "")
-                if trans:
-                    result.append(f"{name}({trans})")
-                else:
-                    result.append(name)
-            elif isinstance(tag, str):
-                result.append(tag)
-    elif isinstance(tags, dict):
-        name = tags.get("name", "")
-        trans = tags.get("translated_name", "")
-        if trans:
-            result.append(f"{name}({trans})")
-        else:
-            result.append(name)
-    elif isinstance(tags, str):
-        result.append(tags)
+            name = _extract_tag_name(tag)
+            trans = _extract_tag_translated_name(tag)
+            if name:
+                result.append(f"{name}({trans})" if trans else name)
+    else:
+        name = _extract_tag_name(tags)
+        trans = _extract_tag_translated_name(tags)
+        if name:
+            result.append(f"{name}({trans})" if trans else name)
     return ", ".join([t for t in result if t]) if result else "无"
 
 
@@ -278,13 +331,10 @@ def has_excluded_tags(item, excluded_tags):
     if not excluded_tags:
         return False
 
-    tags = getattr(item, "tags", [])
-    for tag in tags:
-        name = tag.get("name") if isinstance(tag, dict) else tag
-        if isinstance(name, str):
-            lname = name.lower()
-            if any(excluded_tag in lname for excluded_tag in excluded_tags):
-                return True
+    for name in _extract_tag_names(_get_value(item, "tags") or []):
+        lname = name.lower()
+        if any(excluded_tag in lname for excluded_tag in excluded_tags):
+            return True
     return False
 
 
@@ -484,8 +534,8 @@ def validate_and_process_tags(cleaned_tags):
             "display_tags": cleaned_tags,
         }
 
-    # 使用包含标签进行搜索
-    search_tags = ",".join(include_tags)
+    # Pixiv API expects multi-tag queries joined by spaces rather than commas.
+    search_tags = " ".join(include_tags)
     display_tags = cleaned_tags
 
     return {
