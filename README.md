@@ -316,3 +316,11 @@
 ---
 
 **注意**: 使用本插件需遵守 Pixiv 服务条款和相关法律法规。请合理使用 API 避免频繁请求。
+
+## 上游來源與授權
+
+This repository is a fork of the upstream project. The upstream AGPL-3.0 license and its applicable notices must be preserved; this fork does not claim the upstream work as newly authored.
+
+- 上游專案：[vmoranv-reborn/astrbot_plugin_pixiv_reborn](https://github.com/vmoranv-reborn/astrbot_plugin_pixiv_reborn)
+- 上游授權狀態：AGPL-3.0
+- 本倉庫保留上游來源脈絡；請勿將本倉庫的新增修改誤認為上游作者的作品，也勿將本倉庫授權擴張到第三方素材、資料或依賴。
