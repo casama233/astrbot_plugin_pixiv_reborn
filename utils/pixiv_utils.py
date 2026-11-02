@@ -153,7 +153,9 @@ def _build_image_from_url(url: str) -> Optional[Image]:
     if not url:
         return None
     # URL 发送由平台侧拉取图片，不会复用插件下载代理；这里按配置独立控制反代
-    use_image_proxy = bool(getattr(_config, "use_image_proxy", True)) if _config else True
+    use_image_proxy = (
+        bool(getattr(_config, "use_image_proxy", True)) if _config else True
+    )
     actual_url = get_proxied_image_url(url, use_proxy=use_image_proxy)
     if actual_url and (
         actual_url.startswith("http://") or actual_url.startswith("https://")
@@ -807,6 +809,7 @@ async def send_forward_message(
     nickname = "PixivBot"
     # 在处理转发消息之前，先清理可能存在的旧文件
     await clean_temp_dir(_temp_dir, max_files=20)
+
     class SinglePageUrls:
         def __init__(self, illust):
             self.original = getattr(illust.meta_single_page, "original_image_url", None)
