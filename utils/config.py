@@ -107,7 +107,9 @@ class PixivConfig:
         self.show_details = self.config.get("show_details", True)
         self.deep_search_depth = self.config.get("deep_search_depth", 3)
         self.forward_threshold = self.config.get("forward_threshold", False)
-        raw_send_method = str(self.config.get("image_send_method", "") or "").strip().lower()
+        raw_send_method = (
+            str(self.config.get("image_send_method", "") or "").strip().lower()
+        )
         legacy_is_fromfilesystem = self.config.get("is_fromfilesystem", None)
         if raw_send_method in {"url", "file", "byte"}:
             self.image_send_method = raw_send_method
@@ -152,9 +154,13 @@ class PixivConfig:
         )
         if self.fanbox_data_source not in {"auto", "official", "nekohouse"}:
             self.fanbox_data_source = "auto"
-        self.fanbox_api_proxy_host = self.config.get("fanbox_api_proxy_host", "").strip()
+        self.fanbox_api_proxy_host = self.config.get(
+            "fanbox_api_proxy_host", ""
+        ).strip()
         # TLS 指纹伪装（curl_cffi），如 edge101；留空走默认 aiohttp
-        self.fanbox_dl_impersonate = self.config.get("fanbox_dl_impersonate", "").strip()
+        self.fanbox_dl_impersonate = self.config.get(
+            "fanbox_dl_impersonate", ""
+        ).strip()
         # 批量下载策略参数（非必要不修改，见 _conf_schema.json hint）
         self.fanbox_dl_page_limit = self._get_int("fanbox_dl_page_limit", 300)
         self.fanbox_dl_max_429_retries = self._get_int("fanbox_dl_max_429_retries", 4)
@@ -281,13 +287,48 @@ class PixivConfigManager:
             "fanbox_cf_clearance": {"type": "string", "hidden": True},
             "random_sent_illust_retention_days": {"type": "int", "min": 1, "max": 365},
             # Fanbox 批量下载策略参数（非必要不修改）
-            "fanbox_dl_page_limit": {"type": "int", "min": 1, "max": 300, "hidden": True},
-            "fanbox_dl_max_429_retries": {"type": "int", "min": 0, "max": 20, "hidden": True},
-            "fanbox_dl_max_cf_consecutive": {"type": "int", "min": 1, "max": 20, "hidden": True},
-            "fanbox_dl_max_retries": {"type": "int", "min": 0, "max": 20, "hidden": True},
-            "fanbox_dl_concurrency": {"type": "int", "min": 1, "max": 16, "hidden": True},
-            "fanbox_dl_prefetch_queue": {"type": "int", "min": 1, "max": 32, "hidden": True},
-            "fanbox_dl_pack_size_mb": {"type": "int", "min": 1, "max": 2048, "hidden": True},
+            "fanbox_dl_page_limit": {
+                "type": "int",
+                "min": 1,
+                "max": 300,
+                "hidden": True,
+            },
+            "fanbox_dl_max_429_retries": {
+                "type": "int",
+                "min": 0,
+                "max": 20,
+                "hidden": True,
+            },
+            "fanbox_dl_max_cf_consecutive": {
+                "type": "int",
+                "min": 1,
+                "max": 20,
+                "hidden": True,
+            },
+            "fanbox_dl_max_retries": {
+                "type": "int",
+                "min": 0,
+                "max": 20,
+                "hidden": True,
+            },
+            "fanbox_dl_concurrency": {
+                "type": "int",
+                "min": 1,
+                "max": 16,
+                "hidden": True,
+            },
+            "fanbox_dl_prefetch_queue": {
+                "type": "int",
+                "min": 1,
+                "max": 32,
+                "hidden": True,
+            },
+            "fanbox_dl_pack_size_mb": {
+                "type": "int",
+                "min": 1,
+                "max": 2048,
+                "hidden": True,
+            },
         }
 
     def get_help_text(self) -> str:

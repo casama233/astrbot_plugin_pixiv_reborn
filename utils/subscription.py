@@ -60,13 +60,9 @@ class SubscriptionService:
         for (sub_type, target_id), subs in artists:
             try:
                 if sub_type == "artist":
-                    await self.check_artist_updates_aggregated(
-                        int(target_id), subs
-                    )
+                    await self.check_artist_updates_aggregated(int(target_id), subs)
             except Exception as e:
-                logger.error(
-                    f"检查订阅 {sub_type}: {target_id} 时发生错误: {e}"
-                )
+                logger.error(f"检查订阅 {sub_type}: {target_id} 时发生错误: {e}")
             # 画师之间保留短暂间隔，避免 API 频率限制
             await asyncio.sleep(3)
 
@@ -118,9 +114,7 @@ class SubscriptionService:
         )
 
         for illust in new_illusts:
-            filtered_illusts, _ = filter_items(
-                [illust], f"画师订阅: {sub.target_name}"
-            )
+            filtered_illusts, _ = filter_items([illust], f"画师订阅: {sub.target_name}")
             if filtered_illusts:
                 await self.send_update(sub, filtered_illusts[0])
                 # 同一群内多张作品之间短暂间隔

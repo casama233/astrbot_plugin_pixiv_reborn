@@ -25,7 +25,6 @@ from ..fanbox.headers import build_api_headers, build_html_headers
 from ..fanbox.packer import cleanup_stale_packs
 from ..fanbox.downloader import (
     FanboxDownloadManager,
-    sanitize_filename,
     validate_dir_name,
 )
 
@@ -60,7 +59,13 @@ class FanboxHandler:
         re.IGNORECASE,
     )
 
-    def __init__(self, pixiv_config, context=None, data_dir: Path | None = None, temp_dir: Path | None = None):
+    def __init__(
+        self,
+        pixiv_config,
+        context=None,
+        data_dir: Path | None = None,
+        temp_dir: Path | None = None,
+    ):
         self.pixiv_config = pixiv_config
         self.context = context
         self.temp_dir = temp_dir
@@ -1566,7 +1571,13 @@ class FanboxHandler:
     def _parse_dl_options(self, tokens: list[str]):
         """解析下载选项，返回 (creator_input, options_dict)；出错抛 ValueError。"""
         creator_input = None
-        options: dict[str, Any] = {"limit": None, "since": None, "dl_type": "all", "dir_name": None, "force": False}
+        options: dict[str, Any] = {
+            "limit": None,
+            "since": None,
+            "dl_type": "all",
+            "dir_name": None,
+            "force": False,
+        }
         i = 0
         while i < len(tokens):
             tok = tokens[i]
@@ -1623,7 +1634,9 @@ class FanboxHandler:
             yield event.plain_result(f"参数错误: {e}")
             return
         if not creator_input:
-            yield event.plain_result("缺少 creatorId 参数。发送 /pixiv_fanbox_dl help 查看用法。")
+            yield event.plain_result(
+                "缺少 creatorId 参数。发送 /pixiv_fanbox_dl help 查看用法。"
+            )
             return
 
         try:
@@ -1715,7 +1728,9 @@ class FanboxHandler:
             async for result in self._dl_view_post(event, dir_name, second):
                 yield result
         else:
-            yield event.plain_result(f"无法识别的参数: {second}（应为 postId 或 --pack）")
+            yield event.plain_result(
+                f"无法识别的参数: {second}（应为 postId 或 --pack）"
+            )
 
     def _dl_view_list(self, dir_name: str) -> str:
         posts = self.dl_manager.list_downloaded_posts(dir_name)
@@ -1760,7 +1775,8 @@ class FanboxHandler:
         files = sorted(f for f in post_dir.iterdir() if f.is_file())
         images = [f for f in files if f.suffix.lower() in self.IMAGE_SUFFIXES]
         attachments = [
-            f for f in files
+            f
+            for f in files
             if f.suffix.lower() not in self.IMAGE_SUFFIXES and f.name != "content.md"
         ]
 
@@ -1769,7 +1785,9 @@ class FanboxHandler:
             try:
                 image_components.append(Comp.Image.fromFileSystem(str(img_path)))
             except Exception as e:
-                logger.warning(f"Pixiv 插件：Fanbox 本地图片构建失败 - {img_path} - {e}")
+                logger.warning(
+                    f"Pixiv 插件：Fanbox 本地图片构建失败 - {img_path} - {e}"
+                )
 
         tail_parts = []
         if len(images) > 10:
@@ -1782,7 +1800,9 @@ class FanboxHandler:
             text += "\n\n" + "\n".join(tail_parts)
 
         if image_components:
-            yield event.chain_result([*image_components, Comp.Plain(text or "（无正文）")])
+            yield event.chain_result(
+                [*image_components, Comp.Plain(text or "（无正文）")]
+            )
         else:
             yield event.plain_result(text or "该帖子没有可发送的内容。")
 
@@ -1794,7 +1814,9 @@ class FanboxHandler:
         removed = cleanup_stale_packs(temp_dir)
         if removed:
             logger.info(f"Pixiv 插件：清理 {removed} 个过期 Fanbox 打包文件")
-        pack_limit = getattr(self.pixiv_config, "fanbox_dl_pack_size_mb", 100) * 1024 * 1024
+        pack_limit = (
+            getattr(self.pixiv_config, "fanbox_dl_pack_size_mb", 100) * 1024 * 1024
+        )
         try:
             parts, password = self.dl_manager.pack_creator(
                 dir_name, temp_dir, part_limit=pack_limit

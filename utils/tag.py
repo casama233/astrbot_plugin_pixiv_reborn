@@ -174,6 +174,7 @@ def _is_ai_by_field(item):
     if ai_type == 2:
         return True
 
+
 def _is_ai_by_tag(item):
     """根据标签判断 AI。"""
     for name in _extract_tag_names(_get_value(item, "tags") or []):
@@ -582,7 +583,9 @@ async def process_and_send_illusts(
             filtered_illusts, config.return_count, shuffle=True
         )
         if not illusts_to_send:
-            yield _wrap_result(event.plain_result("筛选后没有符合条件的作品可发送。"), [])
+            yield _wrap_result(
+                event.plain_result("筛选后没有符合条件的作品可发送。"), []
+            )
             return
 
         related_ids = []

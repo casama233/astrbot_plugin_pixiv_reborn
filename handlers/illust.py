@@ -32,7 +32,7 @@ class IllustHandler:
         # 检查是否启用了 Pixiv URL 搜索功能
         if not self.pixiv_config.pixiv_urlsearch_enabled:
             return
-        msg = event.message_str.strip() # 去除首尾空白字符
+        msg = event.message_str.strip()  # 去除首尾空白字符
         # 检查是否为 Pixiv 插画 URL
         if msg.startswith("https://www.pixiv.net/artworks/"):
             try:
@@ -42,15 +42,14 @@ class IllustHandler:
                 if not illust_id.isdigit():
                     yield event.plain_result("无效的 Pixiv 插画 ID。")
                     return
-                
+
                 # 调用已有的 pixiv_specific 方法获取作品信息并发送
                 async for result in self.pixiv_specific(event, illust_id):
                     yield result
             except Exception as e:
                 logger.error(f"获取插画信息失败: {e}")
                 yield event.plain_result("获取插画信息失败，请稍后再试。")
-        
-            
+
     async def pixiv_search_illust(self, event: AstrMessageEvent, tags: str = ""):
         """处理 /pixiv 命令，默认为标签搜索功能"""
         # 清理标签字符串，并检查是否为空或为 "help"
@@ -539,7 +538,9 @@ class IllustHandler:
                     yield result
             else:
                 # 未启用转发时逐张发送
-                detail_message = build_detail_message(filtered_illusts[0], is_novel=False)
+                detail_message = build_detail_message(
+                    filtered_illusts[0], is_novel=False
+                )
                 async for result in send_pixiv_image(
                     self.client,
                     event,
@@ -610,10 +611,7 @@ class IllustHandler:
                 return
 
         # 检查 R18 权限
-        if (
-            "r18" in mode
-            and self.pixiv_config.r18_mode == "过滤 R18"
-        ):
+        if "r18" in mode and self.pixiv_config.r18_mode == "过滤 R18":
             yield event.plain_result(
                 "当前 R18 模式设置为「过滤 R18」，无法使用 R18 相关排行榜。"
             )

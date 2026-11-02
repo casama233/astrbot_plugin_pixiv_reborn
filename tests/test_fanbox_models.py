@@ -28,10 +28,14 @@ from fanbox.models import (
 # fanbox-dl PR#104 官方测试 payload
 PAGINATION_LEGACY = '{"body":["https://api.fanbox.cc/post.listCreator?creatorId=example&limit=10","https://api.fanbox.cc/post.listCreator?creatorId=example&limit=10&page=2"]}'
 PAGINATION_CURRENT = '{"body":{"pageUrls":["https://api.fanbox.cc/post.listCreator?creatorId=example&limit=10","https://api.fanbox.cc/post.listCreator?creatorId=example&limit=10&page=2"]}}'
-LIST_LEGACY = '{"body":[{"id":"1001","title":"First post"},{"id":"1002","title":"Second post"}]}'
+LIST_LEGACY = (
+    '{"body":[{"id":"1001","title":"First post"},{"id":"1002","title":"Second post"}]}'
+)
 LIST_CURRENT = '{"body":{"posts":[{"id":"1001","title":"First post"},{"id":"1002","title":"Second post"}]}}'
 POST_INFO_LEGACY = '{"body":{"id":"1001","title":"Example post","creatorId":"example"}}'
-POST_INFO_CURRENT = '{"body":{"post":{"id":"1001","title":"Example post","creatorId":"example"}}}'
+POST_INFO_CURRENT = (
+    '{"body":{"post":{"id":"1001","title":"Example post","creatorId":"example"}}}'
+)
 EXPECTED_PAGE_URLS = [
     "https://api.fanbox.cc/post.listCreator?creatorId=example&limit=10",
     "https://api.fanbox.cc/post.listCreator?creatorId=example&limit=10&page=2",
@@ -44,8 +48,12 @@ def _make_post(body):
 
 class TestPR104Compat(unittest.TestCase):
     def test_pagination_legacy_and_current(self):
-        self.assertEqual(parse_page_urls(json.loads(PAGINATION_LEGACY)), EXPECTED_PAGE_URLS)
-        self.assertEqual(parse_page_urls(json.loads(PAGINATION_CURRENT)), EXPECTED_PAGE_URLS)
+        self.assertEqual(
+            parse_page_urls(json.loads(PAGINATION_LEGACY)), EXPECTED_PAGE_URLS
+        )
+        self.assertEqual(
+            parse_page_urls(json.loads(PAGINATION_CURRENT)), EXPECTED_PAGE_URLS
+        )
 
     def test_list_creator_legacy_and_current(self):
         for raw in (LIST_LEGACY, LIST_CURRENT):
@@ -94,7 +102,12 @@ class TestListDownloadable(unittest.TestCase):
         post = _make_post(
             {
                 "files": [
-                    {"id": "f1", "name": "pack", "extension": "zip", "url": "https://x/p.zip"}
+                    {
+                        "id": "f1",
+                        "name": "pack",
+                        "extension": "zip",
+                        "url": "https://x/p.zip",
+                    }
                 ]
             }
         )
@@ -113,11 +126,24 @@ class TestListDownloadable(unittest.TestCase):
                     {"type": "image", "imageId": "i2"},
                 ],
                 "imageMap": {
-                    "i1": {"id": "i1", "extension": "jpg", "originalUrl": "https://x/1.jpg"},
-                    "i2": {"id": "i2", "extension": "jpg", "originalUrl": "https://x/2.jpg"},
+                    "i1": {
+                        "id": "i1",
+                        "extension": "jpg",
+                        "originalUrl": "https://x/1.jpg",
+                    },
+                    "i2": {
+                        "id": "i2",
+                        "extension": "jpg",
+                        "originalUrl": "https://x/2.jpg",
+                    },
                 },
                 "fileMap": {
-                    "f1": {"id": "f1", "name": "a", "extension": "zip", "url": "https://x/a.zip"}
+                    "f1": {
+                        "id": "f1",
+                        "name": "a",
+                        "extension": "zip",
+                        "url": "https://x/a.zip",
+                    }
                 },
             }
         )
@@ -150,7 +176,9 @@ class TestDownloadedStore(unittest.TestCase):
             self.assertTrue(store2.contains("1002"))
             self.assertFalse(store2.contains("1003"))
 
-            data = json.loads((Path(tmp) / "downloaded.json").read_text(encoding="utf-8"))
+            data = json.loads(
+                (Path(tmp) / "downloaded.json").read_text(encoding="utf-8")
+            )
             self.assertEqual(data["downloaded"], ["1001", "1002"])
             self.assertIn("updated_at", data)
 
@@ -184,7 +212,9 @@ class TestDownloadOneSkip(unittest.IsolatedAsyncioTestCase):
             mgr = FanboxDownloadManager(Path(tmp))
             client = MagicMock()
             client.download_asset = AsyncMock(return_value=100)
-            asset = FanboxImage(id="i1", extension="jpg", original_url="https://x/1.jpg")
+            asset = FanboxImage(
+                id="i1", extension="jpg", original_url="https://x/1.jpg"
+            )
 
             result = await mgr._download_one(
                 client, asyncio.Semaphore(1), post_dir, 1, asset
@@ -201,7 +231,9 @@ class TestDownloadOneSkip(unittest.IsolatedAsyncioTestCase):
             mgr = FanboxDownloadManager(Path(tmp))
             client = MagicMock()
             client.download_asset = AsyncMock(return_value=100)
-            asset = FanboxImage(id="i1", extension="jpg", original_url="https://x/1.jpg")
+            asset = FanboxImage(
+                id="i1", extension="jpg", original_url="https://x/1.jpg"
+            )
 
             result = await mgr._download_one(
                 client, asyncio.Semaphore(1), post_dir, 1, asset, force=True
@@ -216,7 +248,9 @@ class TestDownloadOneSkip(unittest.IsolatedAsyncioTestCase):
             mgr = FanboxDownloadManager(Path(tmp))
             client = MagicMock()
             client.download_asset = AsyncMock(return_value=100)
-            asset = FanboxImage(id="i1", extension="jpg", original_url="https://x/1.jpg")
+            asset = FanboxImage(
+                id="i1", extension="jpg", original_url="https://x/1.jpg"
+            )
 
             result = await mgr._download_one(
                 client, asyncio.Semaphore(1), Path(tmp), 1, asset
